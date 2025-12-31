@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pré-évaluation CEC (Entrée express) — Questionnaire autonome</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121826; --muted:#9aa4b2; --text:#e6edf3; --accent:#3b82f6; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#070a0f, #0b0f14);color:var(--text);}
+    .wrap{max-width:900px;margin:0 auto;padding:24px;}
+    header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;}
+    h1{font-size:20px;margin:0 0 6px 0;font-weight:700}
+    .sub{color:var(--muted);font-size:13px;line-height:1.4;margin:0}
+    .card{background:rgba(18,24,38,.92);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-top:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px;}
+    @media(min-width:860px){ .grid{grid-template-columns:1fr 1fr;} }
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    select,input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1220;color:var(--text);outline:none}
+    input[type="number"]{appearance:textfield}
+    .row{display:flex;gap:10px;align-items:center}
+    .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 12px;font-size:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{cursor:pointer;border:none;border-radius:12px;padding:10px 12px;font-weight:650}
+    .primary{background:var(--accent);color:white}
+    .ghost{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.18)}
+    .tiny{font-size:12px;color:var(--muted)}
+    .resultTop{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .badge{padding:8px 12px;border-radius:999px;font-weight:700;font-size:12px}
+    .b-ok{background:rgba(34,197,94,.18);color:#86efac;border:1px solid rgba(34,197,94,.35)}
+    .b-warn{background:rgba(245,158,11,.16);color:#fde68a;border:1px solid rgba(245,158,11,.35)}
+    .b-bad{background:rgba(239,68,68,.16);color:#fecaca;border:1px solid rgba(239,68,68,.35)}
+    .score{font-size:28px;font-weight:800}
+    ul{margin:10px 0 0 18px;color:var(--text)}
+    .muted{color:var(--muted)}
+    .divider{height:1px;background:rgba(255,255,255,.10);margin:14px 0}
+    .foot{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.5}
+    .hidden{display:none !important;}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.35}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Pré-évaluation — Entrée express (CEC)</h1>
+        <p class="sub">Questionnaire autonome (sans stockage). Remplis les champs, puis clique <b>Calculer</b> pour obtenir un verdict, un % et les éléments manquants.</p>
+      </div>
+      <div class="pill">
+        <span class="mono">v1 • CEC</span>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="grid">
+        <!-- Q1 -->
+        <div>
+          <label>1) Intention de résider hors Québec (EE = hors Québec)</label>
+          <select id="q_outside_qc">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="yes">Oui</option>
+            <option value="no">Non</option>
+          </select>
+          <div class="hint">Si la personne souhaite s’établir au Québec, la CEC (Entrée express) n’est généralement pas la bonne voie.</div>
+        </div>
+
+        <!-- Q2 -->
+        <div>
+          <label>2) Mois d’expérience de travail canadienne qualifiée (dans les 3 dernières années)</label>
+          <input id="q_months_can" type="number" min="0" step="1" placeholder="Ex. 14" />
+          <div class="hint">Référence pratique : <b>12 mois</b> ≈ <b>1 560 h</b> (30 h/semaine × 52 semaines).</div>
+        </div>
+
+        <!-- Q3 -->
+        <div>
+          <label>3) Heures totales d’expérience canadienne qualifiée (si tu connais)</label>
+          <input id="q_hours_can" type="number" min="0" step="10" placeholder="Ex. 1680" />
+          <div class="hint">Si tu n’as pas le chiffre exact, laisse vide (on utilisera les mois).</div>
+        </div>
+
+        <!-- Q4 -->
+        <div>
+          <label>4) Expérience payée et obtenue avec autorisation de travail?</label>
+          <select id="q_auth_paid">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="yes">Oui</option>
+            <option value="no">Non</option>
+          </select>
+          <div class="hint">Travail <b>sans autorisation</b> = généralement non comptabilisé.</div>
+        </div>
+
+        <!-- Q5 -->
+        <div>
+          <label>5) Expérience acquise en tant qu’étudiant à temps plein?</label>
+          <select id="q_fulltime_student">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="no">Non</option>
+            <option value="yes">Oui</option>
+          </select>
+          <div class="hint">La CEC exclut généralement l’expérience acquise pendant des études à temps plein (exceptions rares).</div>
+        </div>
+
+        <!-- Q6 -->
+        <div>
+          <label>6) Travail autonome (self-employed) pour cette expérience?</label>
+          <select id="q_self_employed">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="no">Non</option>
+            <option value="yes">Oui</option>
+          </select>
+          <div class="hint">La CEC exclut généralement l’expérience à titre de travailleur autonome.</div>
+        </div>
+
+        <!-- Q7 -->
+        <div>
+          <label>7) NOC 2021 / TEER de l’emploi principal</label>
+          <select id="q_teer">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="0-1">TEER 0–1</option>
+            <option value="2-3">TEER 2–3</option>
+            <option value="not_ok">Autre (TEER 4–5 / non admissible)</option>
+          </select>
+          <div class="hint">CEC exige une expérience dans un emploi <b>TEER 0, 1, 2 ou 3</b>.</div>
+        </div>
+
+        <!-- Q8 -->
+        <div>
+          <label>8) Test de langue valide (non expiré)?</label>
+          <select id="q_lang_valid">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="yes">Oui</option>
+            <option value="no">Non</option>
+          </select>
+        </div>
+
+        <!-- Q9 -->
+        <div>
+          <label>9) Niveau CLB/NCLC le plus bas (parmi les 4 compétences)</label>
+          <input id="q_clb" type="number" min="0" step="1" placeholder="Ex. 7" />
+          <div class="hint">CEC : <b>CLB 7</b> si TEER 0–1, ou <b>CLB 5</b> si TEER 2–3.</div>
+        </div>
+
+        <!-- Q10 -->
+        <div>
+          <label>10) Autres infos utiles (optionnel)</label>
+          <input id="q_notes" type="text" placeholder="Notes libres (non utilisées dans le calcul)" />
+          <div class="hint">Ex. statut actuel, dates exactes, NOC, etc.</div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btn_calc">Calculer</button>
+        <button class="ghost" id="btn_reset" title="Réinitialiser toutes les réponses">Réinitialiser</button>
+      </div>
+      <div class="foot">
+        <div><b>Important :</b> ce questionnaire donne une pré-évaluation. Il ne remplace pas une analyse complète (preuves, admissibilité générale, IRPA/IRPR, politiques temporaires, etc.).</div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="card_result">
+      <div class="resultTop">
+        <div id="badge" class="badge b-warn">POTENTIELLEMENT ADMISSIBLE</div>
+        <div class="score" id="score">—%</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <div>
+          <div class="muted">Résumé</div>
+          <div id="summary" style="margin-top:6px;line-height:1.5"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted">Éléments manquants / à clarifier</div>
+      <ul id="missing"></ul>
+
+      <div class="divider"></div>
+      <div class="muted">Détails du scoring</div>
+      <ul id="details"></ul>
+
+      <div class="foot">
+        <div class="tiny">Astuce : tu peux adapter le texte et les règles dans le script en bas (section <span class="mono">CONFIG</span>) pour coller à ta pratique.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/**
+ * Questionnaire autonome CEC — v1
+ * - Critères bloquants (hard stops) -> verdict "NON ADMISSIBLE"
+ * - Score de conformité (0-100) pour représenter "proximité" + infos manquantes
+ * - Aucun stockage, aucune requête réseau
+ */
+
+/* =========================
+   CONFIG (poids & messages)
+   ========================= */
+
+const CONFIG = {
+  // Poids utilisés pour le score (total 100)
+  weights: {
+    experience: 35,     // 12 mois / 1560 h
+    teer: 20,           // TEER 0–3
+    language: 35,       // test valide + CLB minimum
+    outsideQC: 10       // intention hors Québec
+  },
+
+  // Règles CLB selon TEER
+  clbRequired: {
+    "0-1": 7,
+    "2-3": 5
+  },
+
+  // Critères bloquants (si "Non", verdict = Non admissible)
+  hardStops: [
+    {
+      id: "outsideQC",
+      check: (a) => a.outsideQC === "no",
+      message: "La personne indique vouloir s’établir au Québec (Entrée express = hors Québec)."
+    },
+    {
+      id: "authPaid",
+      check: (a) => a.authPaid === "no",
+      message: "Expérience canadienne non obtenue légalement et/ou non payée (généralement non admissible)."
+    },
+    {
+      id: "fulltimeStudent",
+      check: (a) => a.fulltimeStudent === "yes",
+      message: "Expérience acquise pendant des études à temps plein (généralement exclue en CEC)."
+    },
+    {
+      id: "selfEmployed",
+      check: (a) => a.selfEmployed === "yes",
+      message: "Expérience à titre de travailleur autonome (généralement exclue en CEC)."
+    },
+    {
+      id: "teerNotOk",
+      check: (a) => a.teer === "not_ok",
+      message: "Emploi non admissible : la CEC requiert un emploi TEER 0–3."
+    },
+    {
+      id: "langTestInvalid",
+      check: (a) => a.langValid === "no",
+      message: "Test de langue invalide/expiré."
+    },
+    {
+      id: "clbTooLow",
+      check: (a) => {
+        if (a.teer !== "0-1" && a.teer !== "2-3") return false; // si TEER inconnu, pas hard stop ici
+        if (a.clb === null) return false; // si CLB inconnu, pas hard stop
+        return a.clb < CONFIG.clbRequired[a.teer];
+      },
+      message: "Niveau linguistique inférieur au minimum requis selon le TEER."
+    },
+    {
+      id: "expTooLow",
+      check: (a) => {
+        // hard stop seulement si l’info est suffisante pour conclure "moins de 12 mois / 1560h"
+        const hasHours = a.hours !== null;
+        const hasMonths = a.months !== null;
+
+        if (!hasHours && !hasMonths) return false; // inconnu -> pas hard stop
+        if (hasHours && a.hours < 1560) return true;
+        if (!hasHours && hasMonths && a.months < 12) return true;
+        return false;
+      },
+      message: "Moins de 12 mois (ou 1 560 h) d’expérience canadienne qualifiée dans les 3 dernières années."
+    }
+  ],
+
+  // Messages pour les inconnus (à clarifier)
+  unknownMessages: {
+    outsideQC: "Intention de résider hors Québec : à confirmer.",
+    months: "Durée d’expérience canadienne : à confirmer (mois/heures).",
+    authPaid: "Autorisation + travail payé : à confirmer.",
+    fulltimeStudent: "Études à temps plein durant l’expérience : à confirmer.",
+    selfEmployed: "Travail autonome : à confirmer.",
+    teer: "TEER/NOC : à confirmer (doit être TEER 0–3).",
+    langValid: "Validité du test de langue : à confirmer.",
+    clb: "CLB/NCLC : à confirmer (minimum requis dépend du TEER)."
+  }
+};
+
+/* =========================
+   Helpers
+   ========================= */
+const $ = (id) => document.getElementById(id);
+
+function readAnswers(){
+  const outsideQC = $("q_outside_qc").value;
+  const monthsRaw = $("q_months_can").value;
+  const hoursRaw = $("q_hours_can").value;
+  const authPaid = $("q_auth_paid").value;
+  const fulltimeStudent = $("q_fulltime_student").value;
+  const selfEmployed = $("q_self_employed").value;
+  const teer = $("q_teer").value;
+  const langValid = $("q_lang_valid").value;
+  const clbRaw = $("q_clb").value;
+
+  const months = monthsRaw === "" ? null : Math.max(0, parseInt(monthsRaw,10));
+  const hours  = hoursRaw === "" ? null : Math.max(0, parseInt(hoursRaw,10));
+  const clb    = clbRaw === "" ? null : Math.max(0, parseInt(clbRaw,10));
+
+  return { outsideQC, months, hours, authPaid, fulltimeStudent, selfEmployed, teer, langValid, clb };
+}
+
+function addLi(listEl, text){
+  const li = document.createElement("li");
+  li.textContent = text;
+  listEl.appendChild(li);
+}
+
+function computeScore(a){
+  // Score sur 100, mais on réduit pour "unknown" de façon mesurée
+  const w = CONFIG.weights;
+  let points = 0;
+  let max = 0;
+  const details = [];
+
+  // outsideQC (10)
+  max += w.outsideQC;
+  if (a.outsideQC === "yes") { points += w.outsideQC; details.push(`Hors Québec : +${w.outsideQC}`); }
+  else if (a.outsideQC === "unknown") { points += Math.round(w.outsideQC*0.5); details.push(`Hors Québec : +${Math.round(w.outsideQC*0.5)} (à confirmer)`); }
+  else { details.push(`Hors Québec : +0`); }
+
+  // experience (35)
+  max += w.experience;
+  let expOk = null; // true/false/null
+  if (a.hours !== null) expOk = a.hours >= 1560;
+  else if (a.months !== null) expOk = a.months >= 12;
+
+  if (expOk === true) { points += w.experience; details.push(`Expérience CAN (≥ 12 mois/1560h) : +${w.experience}`); }
+  else if (expOk === null) { points += Math.round(w.experience*0.45); details.push(`Expérience CAN : +${Math.round(w.experience*0.45)} (à confirmer)`); }
+  else { details.push(`Expérience CAN : +0`); }
+
+  // teer (20)
+  max += w.teer;
+  if (a.teer === "0-1" || a.teer === "2-3") { points += w.teer; details.push(`TEER admissible (0–3) : +${w.teer}`); }
+  else if (a.teer === "unknown") { points += Math.round(w.teer*0.45); details.push(`TEER : +${Math.round(w.teer*0.45)} (à confirmer)`); }
+  else { details.push(`TEER : +0`); }
+
+  // language (35) = test valide + CLB minimum
+  max += w.language;
+  let langPts = 0;
+
+  // test valid (part du score langue)
+  const testPart = Math.round(w.language * 0.35);   // ~12
+  const clbPart  = w.language - testPart;          // ~23
+
+  if (a.langValid === "yes") { langPts += testPart; details.push(`Test de langue valide : +${testPart}`); }
+  else if (a.langValid === "unknown") { langPts += Math.round(testPart*0.5); details.push(`Test de langue : +${Math.round(testPart*0.5)} (à confirmer)`); }
+  else { details.push(`Test de langue : +0`); }
+
+  // CLB min depends on teer
+  if (a.teer === "0-1" || a.teer === "2-3") {
+    const req = CONFIG.clbRequired[a.teer];
+    if (a.clb === null) { langPts += Math.round(clbPart*0.45); details.push(`CLB/NCLC : +${Math.round(clbPart*0.45)} (à confirmer, requis ${req})`); }
+    else if (a.clb >= req) { langPts += clbPart; details.push(`CLB/NCLC (≥ ${req}) : +${clbPart}`); }
+    else { details.push(`CLB/NCLC (< ${req}) : +0`); }
+  } else {
+    // TEER unknown -> cannot judge CLB requirement
+    if (a.clb === null) { langPts += Math.round(clbPart*0.45); details.push(`CLB/NCLC : +${Math.round(clbPart*0.45)} (à confirmer)`); }
+    else { langPts += Math.round(clbPart*0.6); details.push(`CLB/NCLC : +${Math.round(clbPart*0.6)} (TEER requis à confirmer)`); }
+  }
+
+  points += langPts;
+
+  // If answers indicate likely illegal/unpaid or excluded categories, we don't change score here (hard stops handle verdict)
+  const pct = Math.max(0, Math.min(100, Math.round((points/max)*100)));
+  return { pct, details };
+}
+
+function evaluate(){
+  const a = readAnswers();
+  const missing = [];
+  const hardStopHits = [];
+
+  // Unknowns list
+  if (a.outsideQC === "unknown") missing.push(CONFIG.unknownMessages.outsideQC);
+  if (a.months === null && a.hours === null) missing.push(CONFIG.unknownMessages.months);
+  if (a.authPaid === "unknown") missing.push(CONFIG.unknownMessages.authPaid);
+  if (a.fulltimeStudent === "unknown") missing.push(CONFIG.unknownMessages.fulltimeStudent);
+  if (a.selfEmployed === "unknown") missing.push(CONFIG.unknownMessages.selfEmployed);
+  if (a.teer === "unknown") missing.push(CONFIG.unknownMessages.teer);
+  if (a.langValid === "unknown") missing.push(CONFIG.unknownMessages.langValid);
+  if (a.clb === null) missing.push(CONFIG.unknownMessages.clb);
+
+  // Hard stops
+  for (const hs of CONFIG.hardStops){
+    if (hs.check(a)){
+      hardStopHits.push(hs.message);
+    }
+  }
+
+  const { pct, details } = computeScore(a);
+
+  // Verdict logic
+  let verdict = "POTENTIELLEMENT ADMISSIBLE";
+  let badgeClass = "b-warn";
+
+  if (hardStopHits.length > 0){
+    verdict = "NON ADMISSIBLE (selon les réponses)";
+    badgeClass = "b-bad";
+  } else if (pct >= 90 && missing.length === 0){
+    verdict = "ADMISSIBLE (pré-évaluation)";
+    badgeClass = "b-ok";
+  } else {
+    verdict = "POTENTIELLEMENT ADMISSIBLE";
+    badgeClass = "b-warn";
+  }
+
+  // Render
+  $("card_result").classList.remove("hidden");
+  const badge = $("badge");
+  badge.textContent = verdict;
+  badge.className = `badge ${badgeClass}`;
+  $("score").textContent = `${pct}%`;
+
+  // Summary text
+  const parts = [];
+  if (hardStopHits.length > 0){
+    parts.push("Un ou plusieurs critères bloquants semblent manquants. Voir la liste ci-dessous.");
+  } else if (pct >= 90 && missing.length === 0){
+    parts.push("Les critères principaux semblent satisfaits sur la base des informations fournies.");
+  } else {
+    parts.push("Profil proche mais des éléments doivent être confirmés / corrigés.");
+  }
+  if (a.teer === "0-1" || a.teer === "2-3"){
+    parts.push(`Seuil langue attendu : CLB/NCLC ${CONFIG.clbRequired[a.teer]} (selon TEER).`);
+  } else {
+    parts.push("Le TEER doit être confirmé pour valider le seuil de langue.");
+  }
+  $("summary").textContent = parts.join(" ");
+
+  // Missing list
+  const missingEl = $("missing");
+  missingEl.innerHTML = "";
+  // Hard stops first
+  if (hardStopHits.length > 0){
+    for (const m of hardStopHits) addLi(missingEl, m);
+  }
+  // Then unknowns (clarifications)
+  if (missing.length > 0){
+    for (const m of missing) addLi(missingEl, m);
+  }
+  if (hardStopHits.length === 0 && missing.length === 0){
+    addLi(missingEl, "Aucun élément manquant identifié (selon les réponses).");
+  }
+
+  // Details
+  const detailsEl = $("details");
+  detailsEl.innerHTML = "";
+  for (const d of details) addLi(detailsEl, d);
+}
+
+/* =========================
+   Events
+   ========================= */
+
+$("btn_calc").addEventListener("click", (e) => {
+  e.preventDefault();
+  evaluate();
+  // Scroll to results
+  $("card_result").scrollIntoView({behavior:"smooth", block:"start"});
+});
+
+$("btn_reset").addEventListener("click", (e) => {
+  e.preventDefault();
+  $("q_outside_qc").value = "unknown";
+  $("q_months_can").value = "";
+  $("q_hours_can").value = "";
+  $("q_auth_paid").value = "unknown";
+  $("q_fulltime_student").value = "unknown";
+  $("q_self_employed").value = "unknown";
+  $("q_teer").value = "unknown";
+  $("q_lang_valid").value = "unknown";
+  $("q_clb").value = "";
+  $("q_notes").value = "";
+  $("card_result").classList.add("hidden");
+});
+</script>
+</body>
+  </html>
+  
