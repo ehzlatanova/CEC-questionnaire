@@ -47,7 +47,7 @@
         <p class="sub">Questionnaire autonome (sans stockage). Remplis les champs, puis clique <b>Calculer</b> pour obtenir un verdict, un % et les éléments manquants.</p>
       </div>
       <div class="pill">
-        <span class="mono">v1 • CEC</span>
+        <span class="mono">v2 • CEC</span>
       </div>
     </header>
 
@@ -131,18 +131,53 @@
             <option value="yes">Oui</option>
             <option value="no">Non</option>
           </select>
+          <div class="hint">Entrée express : résultats généralement valides <b>2 ans</b>. :contentReference[oaicite:4]{index=4}</div>
         </div>
 
         <!-- Q9 -->
         <div>
-          <label>9) Niveau CLB/NCLC le plus bas (parmi les 4 compétences)</label>
-          <input id="q_clb" type="number" min="0" step="1" placeholder="Ex. 7" />
-          <div class="hint">CEC : <b>CLB 7</b> si TEER 0–1, ou <b>CLB 5</b> si TEER 2–3.</div>
+          <label>9) Type de test linguistique</label>
+          <select id="q_lang_test">
+            <option value="unknown">Je ne sais pas / à confirmer</option>
+            <option value="ielts">IELTS General Training (anglais)</option>
+            <option value="celpip">CELPIP General (anglais)</option>
+            <option value="tef">TEF Canada (français)</option>
+            <option value="tcf">TCF Canada (français)</option>
+          </select>
+          <div class="hint">
+            Le système convertit automatiquement en CLB/NCLC et retient le <b>niveau le plus bas</b> (celui qui compte).
+            <br/>TEF (Entrée express) : saisir la colonne <b>« Équivalence ancien score »</b>. :contentReference[oaicite:5]{index=5}
+          </div>
         </div>
 
         <!-- Q10 -->
         <div>
-          <label>10) Autres infos utiles (optionnel)</label>
+          <label>10) Compréhension orale (Listening / compréhension de l’oral)</label>
+          <input id="q_lang_L" type="number" step="0.5" placeholder="IELTS: 7.5 | CELPIP: 9 | TEF: 280 | TCF: 503" />
+        </div>
+
+        <!-- Q11 -->
+        <div>
+          <label>11) Expression orale (Speaking / expression orale)</label>
+          <input id="q_lang_S" type="number" step="0.5" placeholder="IELTS: 7.0 | CELPIP: 9 | TEF: 371 | TCF: 14" />
+        </div>
+
+        <!-- Q12 -->
+        <div>
+          <label>12) Lecture (Reading / compréhension de l’écrit)</label>
+          <input id="q_lang_R" type="number" step="0.5" placeholder="IELTS: 6.5 | CELPIP: 8 | TEF: 233 | TCF: 499" />
+        </div>
+
+        <!-- Q13 -->
+        <div>
+          <label>13) Écriture (Writing / expression écrite)</label>
+          <input id="q_lang_W" type="number" step="0.5" placeholder="IELTS: 6.5 | CELPIP: 8 | TEF: 310 | TCF: 10" />
+          <div class="hint">CEC : <b>CLB/NCLC 7</b> si TEER 0–1, ou <b>5</b> si TEER 2–3. :contentReference[oaicite:6]{index=6}</div>
+        </div>
+
+        <!-- Q14 -->
+        <div>
+          <label>14) Autres infos utiles (optionnel)</label>
           <input id="q_notes" type="text" placeholder="Notes libres (non utilisées dans le calcul)" />
           <div class="hint">Ex. statut actuel, dates exactes, NOC, etc.</div>
         </div>
@@ -189,89 +224,59 @@
 
 <script>
 /**
- * Questionnaire autonome CEC — v1
- * - Critères bloquants (hard stops) -> verdict "NON ADMISSIBLE"
- * - Score de conformité (0-100) pour représenter "proximité" + infos manquantes
- * - Aucun stockage, aucune requête réseau
+ * Questionnaire autonome CEC — v2
+ * - Langue: type de test + 4 compétences -> CLB/NCLC auto (niveau le plus bas)
  */
 
 /* =========================
-   CONFIG (poids & messages)
+   CONFIG
    ========================= */
 
 const CONFIG = {
-  // Poids utilisés pour le score (total 100)
   weights: {
-    experience: 35,     // 12 mois / 1560 h
-    teer: 20,           // TEER 0–3
-    language: 35,       // test valide + CLB minimum
-    outsideQC: 10       // intention hors Québec
+    experience: 35,
+    teer: 20,
+    language: 35,
+    outsideQC: 10
   },
 
-  // Règles CLB selon TEER
   clbRequired: {
     "0-1": 7,
     "2-3": 5
   },
 
-  // Critères bloquants (si "Non", verdict = Non admissible)
   hardStops: [
+    { id:"outsideQC", check:(a)=>a.outsideQC==="no", message:"La personne indique vouloir s’établir au Québec (Entrée express = hors Québec)." },
+    { id:"authPaid", check:(a)=>a.authPaid==="no", message:"Expérience canadienne non obtenue légalement et/ou non payée (généralement non admissible)." },
+    { id:"fulltimeStudent", check:(a)=>a.fulltimeStudent==="yes", message:"Expérience acquise pendant des études à temps plein (généralement exclue en CEC)." },
+    { id:"selfEmployed", check:(a)=>a.selfEmployed==="yes", message:"Expérience à titre de travailleur autonome (généralement exclue en CEC)." },
+    { id:"teerNotOk", check:(a)=>a.teer==="not_ok", message:"Emploi non admissible : la CEC requiert un emploi TEER 0–3." },
+    { id:"langTestInvalid", check:(a)=>a.langValid==="no", message:"Test de langue invalide/expiré." },
     {
-      id: "outsideQC",
-      check: (a) => a.outsideQC === "no",
-      message: "La personne indique vouloir s’établir au Québec (Entrée express = hors Québec)."
-    },
-    {
-      id: "authPaid",
-      check: (a) => a.authPaid === "no",
-      message: "Expérience canadienne non obtenue légalement et/ou non payée (généralement non admissible)."
-    },
-    {
-      id: "fulltimeStudent",
-      check: (a) => a.fulltimeStudent === "yes",
-      message: "Expérience acquise pendant des études à temps plein (généralement exclue en CEC)."
-    },
-    {
-      id: "selfEmployed",
-      check: (a) => a.selfEmployed === "yes",
-      message: "Expérience à titre de travailleur autonome (généralement exclue en CEC)."
-    },
-    {
-      id: "teerNotOk",
-      check: (a) => a.teer === "not_ok",
-      message: "Emploi non admissible : la CEC requiert un emploi TEER 0–3."
-    },
-    {
-      id: "langTestInvalid",
-      check: (a) => a.langValid === "no",
-      message: "Test de langue invalide/expiré."
-    },
-    {
-      id: "clbTooLow",
-      check: (a) => {
-        if (a.teer !== "0-1" && a.teer !== "2-3") return false; // si TEER inconnu, pas hard stop ici
-        if (a.clb === null) return false; // si CLB inconnu, pas hard stop
-        return a.clb < CONFIG.clbRequired[a.teer];
+      id:"clbTooLow",
+      check:(a)=>{
+        if (a.teer !== "0-1" && a.teer !== "2-3") return false;
+        const lang = computeLang(a);
+        if (lang.min === null) return false; // inconnu -> pas hard stop
+        return lang.min < CONFIG.clbRequired[a.teer];
       },
-      message: "Niveau linguistique inférieur au minimum requis selon le TEER."
+      message:"Niveau linguistique inférieur au minimum requis selon le TEER."
     },
     {
-      id: "expTooLow",
-      check: (a) => {
-        // hard stop seulement si l’info est suffisante pour conclure "moins de 12 mois / 1560h"
+      id:"expTooLow",
+      check:(a)=>{
         const hasHours = a.hours !== null;
         const hasMonths = a.months !== null;
 
-        if (!hasHours && !hasMonths) return false; // inconnu -> pas hard stop
+        if (!hasHours && !hasMonths) return false;
         if (hasHours && a.hours < 1560) return true;
         if (!hasHours && hasMonths && a.months < 12) return true;
         return false;
       },
-      message: "Moins de 12 mois (ou 1 560 h) d’expérience canadienne qualifiée dans les 3 dernières années."
+      message:"Moins de 12 mois (ou 1 560 h) d’expérience canadienne qualifiée dans les 3 dernières années."
     }
   ],
 
-  // Messages pour les inconnus (à clarifier)
   unknownMessages: {
     outsideQC: "Intention de résider hors Québec : à confirmer.",
     months: "Durée d’expérience canadienne : à confirmer (mois/heures).",
@@ -280,7 +285,8 @@ const CONFIG = {
     selfEmployed: "Travail autonome : à confirmer.",
     teer: "TEER/NOC : à confirmer (doit être TEER 0–3).",
     langValid: "Validité du test de langue : à confirmer.",
-    clb: "CLB/NCLC : à confirmer (minimum requis dépend du TEER)."
+    langTest: "Type de test de langue : à confirmer (IELTS/CELPIP/TEF/TCF).",
+    langScores: "Résultats de langue par compétence : à compléter (L/S/R/W)."
   }
 };
 
@@ -288,6 +294,210 @@ const CONFIG = {
    Helpers
    ========================= */
 const $ = (id) => document.getElementById(id);
+
+function addLi(listEl, text){
+  const li = document.createElement("li");
+  li.textContent = text;
+  listEl.appendChild(li);
+}
+
+function toNumOrNull(v){
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (s === "") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function inRange(n,a,b){ return n >= a && n <= b; }
+
+/* =========================
+   IRCC equivalences (CLB/NCLC)
+   Sources: IRCC tables :contentReference[oaicite:7]{index=7}
+   ========================= */
+
+// IELTS (General Training) -> CLB :contentReference[oaicite:8]{index=8}
+function ieltsToCLB(score, skill){
+  const s = score;
+  if (skill === "R"){
+    if (s >= 8.0) return 10;
+    if (s >= 7.0) return 9;
+    if (s >= 6.5) return 8;
+    if (s >= 6.0) return 7;
+    if (s >= 5.0) return 6;
+    if (s >= 4.0) return 5;
+    if (s >= 3.5) return 4;
+    return 0;
+  }
+  if (skill === "W"){
+    if (s >= 7.5) return 10;
+    if (s >= 7.0) return 9;
+    if (s >= 6.5) return 8;
+    if (s >= 6.0) return 7;
+    if (s >= 5.5) return 6;
+    if (s >= 5.0) return 5;
+    if (s >= 4.0) return 4;
+    return 0;
+  }
+  if (skill === "L"){
+    if (s >= 8.5) return 10;
+    if (s >= 8.0) return 9;
+    if (s >= 7.5) return 8;
+    if (s >= 6.0) return 7;
+    if (s >= 5.5) return 6;
+    if (s >= 5.0) return 5;
+    if (s >= 4.5) return 4;
+    return 0;
+  }
+  if (skill === "S"){
+    if (s >= 7.5) return 10;
+    if (s >= 7.0) return 9;
+    if (s >= 6.5) return 8;
+    if (s >= 6.0) return 7;
+    if (s >= 5.5) return 6;
+    if (s >= 5.0) return 5;
+    if (s >= 4.0) return 4;
+    return 0;
+  }
+  return null;
+}
+
+// CELPIP General -> CLB (niveau = score) :contentReference[oaicite:9]{index=9}
+function celpipToCLB(score){
+  const s = Math.round(score);
+  if (!Number.isFinite(s)) return null;
+  return Math.max(0, s);
+}
+
+// TEF Canada (Express Entry) -> NCLC via “Équivalence ancien score” :contentReference[oaicite:10]{index=10}
+function tefOldToNCLC(score, skill){
+  const s = score;
+  // Speaking / Writing
+  if (skill === "S" || skill === "W"){
+    if (inRange(s, 393, 450)) return 10;
+    if (inRange(s, 371, 392)) return 9;
+    if (inRange(s, 349, 370)) return 8;
+    if (inRange(s, 310, 348)) return 7;
+    if (inRange(s, 271, 309)) return 6;
+    if (inRange(s, 226, 270)) return 5;
+    if (inRange(s, 181, 225)) return 4;
+    return 0;
+  }
+  // Listening
+  if (skill === "L"){
+    if (inRange(s, 316, 360)) return 10;
+    if (inRange(s, 298, 315)) return 9;
+    if (inRange(s, 280, 297)) return 8;
+    if (inRange(s, 249, 279)) return 7;
+    if (inRange(s, 217, 248)) return 6;
+    if (inRange(s, 181, 216)) return 5;
+    if (inRange(s, 145, 180)) return 4;
+    return 0;
+  }
+  // Reading
+  if (skill === "R"){
+    if (inRange(s, 263, 300)) return 10;
+    if (inRange(s, 248, 262)) return 9;
+    if (inRange(s, 233, 247)) return 8;
+    if (inRange(s, 207, 232)) return 7;
+    if (inRange(s, 181, 206)) return 6;
+    if (inRange(s, 151, 180)) return 5;
+    if (inRange(s, 121, 150)) return 4;
+    return 0;
+  }
+  return null;
+}
+
+// TCF Canada -> NCLC (table IRCC) :contentReference[oaicite:11]{index=11}
+function tcfToNCLC(score, skill){
+  const s = score;
+
+  // Reading
+  if (skill === "R"){
+    if (inRange(s, 549, 699)) return 10;
+    if (inRange(s, 524, 548)) return 9;
+    if (inRange(s, 499, 523)) return 8;
+    if (inRange(s, 453, 498)) return 7;
+    if (inRange(s, 406, 452)) return 6;
+    if (inRange(s, 375, 405)) return 5;
+    if (inRange(s, 342, 374)) return 4;
+    return 0;
+  }
+
+  // Listening
+  if (skill === "L"){
+    if (inRange(s, 549, 699)) return 10;
+    if (inRange(s, 523, 548)) return 9;
+    if (inRange(s, 503, 522)) return 8;
+    if (inRange(s, 458, 502)) return 7;
+    if (inRange(s, 398, 457)) return 6;
+    if (inRange(s, 369, 397)) return 5;
+    if (inRange(s, 331, 368)) return 4;
+    return 0;
+  }
+
+  // Writing / Speaking (4-20)
+  if (skill === "W" || skill === "S"){
+    if (inRange(s, 16, 20)) return 10;
+    if (inRange(s, 14, 15)) return 9;
+    if (inRange(s, 12, 13)) return 8;
+    if (inRange(s, 10, 11)) return 7;
+    if (inRange(s, 7, 9)) return 6;
+    if (s === 6) return 5;
+    if (inRange(s, 4, 5)) return 4;
+    return 0;
+  }
+
+  return null;
+}
+
+// Compute lowest CLB/NCLC across 4 skills (L,S,R,W)
+function computeLang(a){
+  const test = a.langTest;
+
+  const rawL = a.langL, rawS = a.langS, rawR = a.langR, rawW = a.langW;
+  if (test === "unknown") return { test, min: null, details: null, label: null };
+  if ([rawL, rawS, rawR, rawW].some(v => v === null)) return { test, min: null, details: null, label: null };
+
+  let L=null,S=null,R=null,W=null, label=null;
+
+  if (test === "ielts"){
+    label = "CLB (anglais)";
+    L = ieltsToCLB(rawL,"L");
+    S = ieltsToCLB(rawS,"S");
+    R = ieltsToCLB(rawR,"R");
+    W = ieltsToCLB(rawW,"W");
+  } else if (test === "celpip"){
+    label = "CLB (anglais)";
+    L = celpipToCLB(rawL);
+    S = celpipToCLB(rawS);
+    R = celpipToCLB(rawR);
+    W = celpipToCLB(rawW);
+  } else if (test === "tef"){
+    label = "NCLC (français)";
+    L = tefOldToNCLC(rawL,"L");
+    S = tefOldToNCLC(rawS,"S");
+    R = tefOldToNCLC(rawR,"R");
+    W = tefOldToNCLC(rawW,"W");
+  } else if (test === "tcf"){
+    label = "NCLC (français)";
+    L = tcfToNCLC(rawL,"L");
+    S = tcfToNCLC(rawS,"S");
+    R = tcfToNCLC(rawR,"R");
+    W = tcfToNCLC(rawW,"W");
+  } else {
+    return { test, min: null, details: null, label: null };
+  }
+
+  if ([L,S,R,W].some(v => v === null)) return { test, min: null, details: null, label: null };
+  const details = { L, S, R, W };
+  const min = Math.min(L,S,R,W);
+  return { test, min, details, label };
+}
+
+/* =========================
+   Read / Score / Evaluate
+   ========================= */
 
 function readAnswers(){
   const outsideQC = $("q_outside_qc").value;
@@ -298,190 +508,17 @@ function readAnswers(){
   const selfEmployed = $("q_self_employed").value;
   const teer = $("q_teer").value;
   const langValid = $("q_lang_valid").value;
-  const clbRaw = $("q_clb").value;
+
+  const langTest = $("q_lang_test").value;
+  const langL = toNumOrNull($("q_lang_L").value);
+  const langS = toNumOrNull($("q_lang_S").value);
+  const langR = toNumOrNull($("q_lang_R").value);
+  const langW = toNumOrNull($("q_lang_W").value);
 
   const months = monthsRaw === "" ? null : Math.max(0, parseInt(monthsRaw,10));
   const hours  = hoursRaw === "" ? null : Math.max(0, parseInt(hoursRaw,10));
-  const clb    = clbRaw === "" ? null : Math.max(0, parseInt(clbRaw,10));
 
-  return { outsideQC, months, hours, authPaid, fulltimeStudent, selfEmployed, teer, langValid, clb };
+  return { outsideQC, months, hours, authPaid, fulltimeStudent, selfEmployed, teer, langValid, langTest, langL, langS, langR, langW };
 }
 
-function addLi(listEl, text){
-  const li = document.createElement("li");
-  li.textContent = text;
-  listEl.appendChild(li);
-}
-
-function computeScore(a){
-  // Score sur 100, mais on réduit pour "unknown" de façon mesurée
-  const w = CONFIG.weights;
-  let points = 0;
-  let max = 0;
-  const details = [];
-
-  // outsideQC (10)
-  max += w.outsideQC;
-  if (a.outsideQC === "yes") { points += w.outsideQC; details.push(`Hors Québec : +${w.outsideQC}`); }
-  else if (a.outsideQC === "unknown") { points += Math.round(w.outsideQC*0.5); details.push(`Hors Québec : +${Math.round(w.outsideQC*0.5)} (à confirmer)`); }
-  else { details.push(`Hors Québec : +0`); }
-
-  // experience (35)
-  max += w.experience;
-  let expOk = null; // true/false/null
-  if (a.hours !== null) expOk = a.hours >= 1560;
-  else if (a.months !== null) expOk = a.months >= 12;
-
-  if (expOk === true) { points += w.experience; details.push(`Expérience CAN (≥ 12 mois/1560h) : +${w.experience}`); }
-  else if (expOk === null) { points += Math.round(w.experience*0.45); details.push(`Expérience CAN : +${Math.round(w.experience*0.45)} (à confirmer)`); }
-  else { details.push(`Expérience CAN : +0`); }
-
-  // teer (20)
-  max += w.teer;
-  if (a.teer === "0-1" || a.teer === "2-3") { points += w.teer; details.push(`TEER admissible (0–3) : +${w.teer}`); }
-  else if (a.teer === "unknown") { points += Math.round(w.teer*0.45); details.push(`TEER : +${Math.round(w.teer*0.45)} (à confirmer)`); }
-  else { details.push(`TEER : +0`); }
-
-  // language (35) = test valide + CLB minimum
-  max += w.language;
-  let langPts = 0;
-
-  // test valid (part du score langue)
-  const testPart = Math.round(w.language * 0.35);   // ~12
-  const clbPart  = w.language - testPart;          // ~23
-
-  if (a.langValid === "yes") { langPts += testPart; details.push(`Test de langue valide : +${testPart}`); }
-  else if (a.langValid === "unknown") { langPts += Math.round(testPart*0.5); details.push(`Test de langue : +${Math.round(testPart*0.5)} (à confirmer)`); }
-  else { details.push(`Test de langue : +0`); }
-
-  // CLB min depends on teer
-  if (a.teer === "0-1" || a.teer === "2-3") {
-    const req = CONFIG.clbRequired[a.teer];
-    if (a.clb === null) { langPts += Math.round(clbPart*0.45); details.push(`CLB/NCLC : +${Math.round(clbPart*0.45)} (à confirmer, requis ${req})`); }
-    else if (a.clb >= req) { langPts += clbPart; details.push(`CLB/NCLC (≥ ${req}) : +${clbPart}`); }
-    else { details.push(`CLB/NCLC (< ${req}) : +0`); }
-  } else {
-    // TEER unknown -> cannot judge CLB requirement
-    if (a.clb === null) { langPts += Math.round(clbPart*0.45); details.push(`CLB/NCLC : +${Math.round(clbPart*0.45)} (à confirmer)`); }
-    else { langPts += Math.round(clbPart*0.6); details.push(`CLB/NCLC : +${Math.round(clbPart*0.6)} (TEER requis à confirmer)`); }
-  }
-
-  points += langPts;
-
-  // If answers indicate likely illegal/unpaid or excluded categories, we don't change score here (hard stops handle verdict)
-  const pct = Math.max(0, Math.min(100, Math.round((points/max)*100)));
-  return { pct, details };
-}
-
-function evaluate(){
-  const a = readAnswers();
-  const missing = [];
-  const hardStopHits = [];
-
-  // Unknowns list
-  if (a.outsideQC === "unknown") missing.push(CONFIG.unknownMessages.outsideQC);
-  if (a.months === null && a.hours === null) missing.push(CONFIG.unknownMessages.months);
-  if (a.authPaid === "unknown") missing.push(CONFIG.unknownMessages.authPaid);
-  if (a.fulltimeStudent === "unknown") missing.push(CONFIG.unknownMessages.fulltimeStudent);
-  if (a.selfEmployed === "unknown") missing.push(CONFIG.unknownMessages.selfEmployed);
-  if (a.teer === "unknown") missing.push(CONFIG.unknownMessages.teer);
-  if (a.langValid === "unknown") missing.push(CONFIG.unknownMessages.langValid);
-  if (a.clb === null) missing.push(CONFIG.unknownMessages.clb);
-
-  // Hard stops
-  for (const hs of CONFIG.hardStops){
-    if (hs.check(a)){
-      hardStopHits.push(hs.message);
-    }
-  }
-
-  const { pct, details } = computeScore(a);
-
-  // Verdict logic
-  let verdict = "POTENTIELLEMENT ADMISSIBLE";
-  let badgeClass = "b-warn";
-
-  if (hardStopHits.length > 0){
-    verdict = "NON ADMISSIBLE (selon les réponses)";
-    badgeClass = "b-bad";
-  } else if (pct >= 90 && missing.length === 0){
-    verdict = "ADMISSIBLE (pré-évaluation)";
-    badgeClass = "b-ok";
-  } else {
-    verdict = "POTENTIELLEMENT ADMISSIBLE";
-    badgeClass = "b-warn";
-  }
-
-  // Render
-  $("card_result").classList.remove("hidden");
-  const badge = $("badge");
-  badge.textContent = verdict;
-  badge.className = `badge ${badgeClass}`;
-  $("score").textContent = `${pct}%`;
-
-  // Summary text
-  const parts = [];
-  if (hardStopHits.length > 0){
-    parts.push("Un ou plusieurs critères bloquants semblent manquants. Voir la liste ci-dessous.");
-  } else if (pct >= 90 && missing.length === 0){
-    parts.push("Les critères principaux semblent satisfaits sur la base des informations fournies.");
-  } else {
-    parts.push("Profil proche mais des éléments doivent être confirmés / corrigés.");
-  }
-  if (a.teer === "0-1" || a.teer === "2-3"){
-    parts.push(`Seuil langue attendu : CLB/NCLC ${CONFIG.clbRequired[a.teer]} (selon TEER).`);
-  } else {
-    parts.push("Le TEER doit être confirmé pour valider le seuil de langue.");
-  }
-  $("summary").textContent = parts.join(" ");
-
-  // Missing list
-  const missingEl = $("missing");
-  missingEl.innerHTML = "";
-  // Hard stops first
-  if (hardStopHits.length > 0){
-    for (const m of hardStopHits) addLi(missingEl, m);
-  }
-  // Then unknowns (clarifications)
-  if (missing.length > 0){
-    for (const m of missing) addLi(missingEl, m);
-  }
-  if (hardStopHits.length === 0 && missing.length === 0){
-    addLi(missingEl, "Aucun élément manquant identifié (selon les réponses).");
-  }
-
-  // Details
-  const detailsEl = $("details");
-  detailsEl.innerHTML = "";
-  for (const d of details) addLi(detailsEl, d);
-}
-
-/* =========================
-   Events
-   ========================= */
-
-$("btn_calc").addEventListener("click", (e) => {
-  e.preventDefault();
-  evaluate();
-  // Scroll to results
-  $("card_result").scrollIntoView({behavior:"smooth", block:"start"});
-});
-
-$("btn_reset").addEventListener("click", (e) => {
-  e.preventDefault();
-  $("q_outside_qc").value = "unknown";
-  $("q_months_can").value = "";
-  $("q_hours_can").value = "";
-  $("q_auth_paid").value = "unknown";
-  $("q_fulltime_student").value = "unknown";
-  $("q_self_employed").value = "unknown";
-  $("q_teer").value = "unknown";
-  $("q_lang_valid").value = "unknown";
-  $("q_clb").value = "";
-  $("q_notes").value = "";
-  $("card_result").classList.add("hidden");
-});
-</script>
-</body>
-  </html>
-  
+function computeScore(
